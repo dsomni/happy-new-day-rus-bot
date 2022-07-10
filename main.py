@@ -168,9 +168,11 @@ def set_sleep_period(message, markup):
 @check_owner
 @with_markup
 def get_scrap_time(message, markup):
+    global scrap_time
     # from +3 to GMT
-    hours = (scrap_time // 3600 + 3) % 24
-    minutes = (scrap_time - hours * 3600) // 60
+    sc_time = (scrap_time + 3 * 60 * 60) % (24 * 60 * 60)
+    hours = (sc_time // 3600) % 24
+    minutes = (sc_time - hours * 3600) // 60
     bot.send_message(message.chat.id, f"{hours:02d}:{minutes:02d}", reply_markup=markup)
 
 
