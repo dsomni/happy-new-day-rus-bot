@@ -271,7 +271,6 @@ def check_scrap_time() -> None:
 
 def start_msg_queue(results: list) -> None:
     global bot, is_busy, respondents
-    print(respondents)
     for msg in results:
         for respondent in respondents:
             try:
