@@ -21,6 +21,21 @@ should_scrap = False
 is_busy = False
 last_fetch = 0
 
+available_commands = [
+    "/start",
+    "/stop",
+    "/scrap",
+    "/get_scrap_time",
+    "/set_scrap_time hh:mm",
+    "/get_sleep_period",
+    "/set_sleep_period hh:mm:ss",
+    "/get_respondents",
+    "/set_respondents user_id1 user_id2 ...",
+    "/add_respondent user_id",
+    "/remove_respondent user_id",
+    "/commands",
+]
+
 
 def extract_arg(arg):
     return arg.split()[1:]
@@ -73,6 +88,7 @@ def get_markup(subscribed: bool, is_owner: bool = False):
         markup.add(types.KeyboardButton("Подписаться"))  # type: ignore
     if is_owner:
         markup.add(types.KeyboardButton("/scrap"))  # type: ignore
+        markup.add(types.KeyboardButton("/commands"))  # type: ignore
         markup.add(types.KeyboardButton("/get_scrap_time"))  # type: ignore
         markup.add(types.KeyboardButton("/get_sleep_period"))  # type: ignore
         markup.add(types.KeyboardButton("/get_respondents"))  # type: ignore
@@ -123,6 +139,14 @@ def stop(message, markup):
     exit(0)
 
 
+@bot.message_handler(commands=["commands"])
+@check_owner
+@with_markup
+def commands(message, markup):
+    global available_commands
+    bot.send_message(message.chat.id, "\n".join(available_commands), reply_markup=markup)
+
+
 @bot.message_handler(commands=["scrap"])
 @check_owner
 def scrap_to_channel(message):
@@ -168,9 +192,65 @@ def set_sleep_period(message, markup):
 @bot.message_handler(commands=["get_respondents"])
 @check_owner
 @with_markup
+def set_respondents(message, markup):
+    global respondents
+    bot.send_message(message.chat.id, " ".join(respondents), reply_markup=markup)
+
+
+@bot.message_handler(commands=["set_respondents"])
+@check_owner
+@with_markup
 def get_respondents(message, markup):
     global respondents
-    bot.send_message(message.chat.id, "\n".join(respondents), reply_markup=markup)
+    try:
+        respondents = extract_arg(message.text)
+        configs["RESPONDENTS"] = respondents
+        save_config(configs)
+        bot.send_message(message.chat.id, "Респонденты успешно обновлены", reply_markup=markup)
+    except:
+        bot.reply_to(
+            message,
+            "Что-то сломалось, вопросы?",
+            reply_markup=markup,
+        )
+
+
+@bot.message_handler(commands=["add_respondent"])
+@check_owner
+@with_markup
+def add_respondent(message, markup):
+    global respondents
+    try:
+        respondent = extract_arg(message.text)[0]
+
+        if respondent not in respondents:
+            subscribe(respondent)
+        bot.send_message(message.chat.id, "Респондент успешно добавлен", reply_markup=markup)
+    except:
+        bot.reply_to(
+            message,
+            "Что-то сломалось, вопросы?",
+            reply_markup=markup,
+        )
+
+
+@bot.message_handler(commands=["remove_respondent"])
+@check_owner
+@with_markup
+def remove_respondent(message, markup):
+    global respondents
+    try:
+        respondent = extract_arg(message.text)[0]
+
+        if respondent in respondents:
+            describe(respondent)
+        bot.send_message(message.chat.id, "Респондент успешно удалён", reply_markup=markup)
+    except:
+        bot.reply_to(
+            message,
+            "Что-то сломалось, вопросы?",
+            reply_markup=markup,
+        )
 
 
 @bot.message_handler(commands=["get_scrap_time"])
@@ -271,8 +351,8 @@ def check_scrap_time() -> None:
 
 def start_msg_queue(results: list) -> None:
     global bot, is_busy, respondents
-    for msg in results:
-        for respondent in respondents:
+    for respondent in respondents:
+        for msg in results:
             try:
                 bot.send_message(respondent, str(msg))
                 time.sleep(3.1)
