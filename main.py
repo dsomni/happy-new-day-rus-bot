@@ -75,6 +75,7 @@ def get_markup(subscribed: bool, is_owner: bool = False):
         markup.add(types.KeyboardButton("/scrap"))  # type: ignore
         markup.add(types.KeyboardButton("/get_scrap_time"))  # type: ignore
         markup.add(types.KeyboardButton("/get_sleep_period"))  # type: ignore
+        markup.add(types.KeyboardButton("/get_respondents"))  # type: ignore
         markup.add(types.KeyboardButton("/stop"))  # type: ignore
     return markup
 
@@ -162,6 +163,14 @@ def set_sleep_period(message, markup):
             f"Некорректный формат времени\nОжидалось:\n\n{message.text.split()[0]} hh:mm:ss",
             reply_markup=markup,
         )
+
+
+@bot.message_handler(commands=["get_respondents"])
+@check_owner
+@with_markup
+def get_respondents(message, markup):
+    global respondents
+    bot.send_message(message.chat.id, "\n".join(respondents), reply_markup=markup)
 
 
 @bot.message_handler(commands=["get_scrap_time"])
@@ -261,13 +270,14 @@ def check_scrap_time() -> None:
 
 
 def start_msg_queue(results: list) -> None:
-    global bot, is_busy
+    global bot, is_busy, respondents
+    print(respondents)
     for msg in results:
         for respondent in respondents:
             try:
                 bot.send_message(respondent, str(msg))
                 time.sleep(3.1)
-            except:
+            except BaseException as e:
                 pass
     is_busy = False
 
