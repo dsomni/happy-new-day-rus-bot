@@ -130,5 +130,8 @@ dmypy.json
 
 
 # Custom
-config.json
+settings.json
 Pipfile.lock
+storage/*.csv
+gallery/*
+!gallery/.gitignore

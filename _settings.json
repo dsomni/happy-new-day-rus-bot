@@ -1,0 +1,19 @@
+{
+  "scrap_timer": {
+    "hours": 1,
+    "minutes": 0
+  },
+  "post_timer": {
+    "hours": 11,
+    "minutes": 0
+  },
+  "clean_timer": {
+    "days": 5
+  },
+  "subscribers": [],
+  "owner": {
+    "tg_id": 0,
+    "tg_alias": ""
+  },
+  "image_soft_prompt": "funny happy kittens"
+}

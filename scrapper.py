@@ -1,64 +1,77 @@
-from random import randint, sample
-import requests
+"""Contains Scrapper that scraps holidays"""
+
+from tqdm import tqdm
 from bs4 import BeautifulSoup
+import requests
+from gallery import GALLERY
 
-from utils import load_config
+from local_secrets import SECRETS_MANAGER
 
-EMOJI = ["💝", "💛", "💯", "🎁", "🎈", "🎉", "🎊", "💐", "🌹", "🌺", "🥳", "🤪", "🤗"]
-
-
-def parse_city(holiday_list: list[str]) -> tuple[list[str], list[str]]:
-    try:
-        idx = holiday_list.index("-")
-        city = holiday_list[idx + 1 :]
-        holiday_list = holiday_list[:idx]
-        if city == ["США"]:
-            city = ["(США🤢🤮)"]
-        else:
-            city[0] = "(" + city[0]
-            city[-1] += ")"
-        return (holiday_list, city)
-    except:
-        return (holiday_list, [])
+from holiday import Holiday
+from image_generator import DALLeImageGenerator
+from storage import STORAGE
 
 
-def add_emoji(holiday: str) -> str:
-    holiday += f"{'!' * randint(3, 6)} {''.join(sample(EMOJI, randint(5, 8), counts=[3]*len(EMOJI)))}"
-    return holiday
+class Scrapper:
+    """Scraps holidays"""
 
+    def _scrap_holiday_titles(self) -> list[str]:
+        response = requests.get(
+            "https://kakoysegodnyaprazdnik.ru/", headers=self._headers, timeout=10
+        )
 
-def format_holiday(holiday: str, include_city: bool):
-    holiday_list, city = parse_city(list(holiday.split()))
-    if holiday_list[0].lower() == "день":
-        holiday_list[0] = "С Днём"
-    elif holiday_list[0].lower() == "праздник" or holiday_list[0].lower() == "празднование":
-        holiday_list[0] = "С Праздником"
-    else:
-        holiday_list[0] = f'С Праздником "{holiday_list[0]}'
-        holiday_list[-1] += '"'
-    if include_city and len(city) > 0:
-        holiday_list.append(f"{' '.join(city)}")
-    holiday = " ".join(holiday_list)
-    holiday = add_emoji(holiday)
-    return holiday
+        soup = BeautifulSoup(response.content, "html.parser")
 
+        holiday_titles = []
 
-def scrapper() -> list:
-    config = load_config()
+        elements = list(
+            soup.find("div", {"class": "listing_wr"}).findChildren(  # type: ignore
+                "div", {"itemprop": "suggestedAnswer"}, recursive=False
+            )
+        )
 
-    url = config.get("FETCH_DOMAIN")
-    if not url:
-        return []
-    page = requests.get(url)
-    if page.status_code != 200:
-        return []
-    soup = BeautifulSoup(page.text, "html.parser")
-    holidays_list = soup.find("ul", class_="holidays-list")
-    holidays = []
-    for li in holidays_list.findChildren("li", recursive=False):  # type: ignore
-        holidays.append(format_holiday(li.text.strip(), config.get("INCLUDE_CITY") or False))
-    return holidays
+        for element in tqdm(
+            elements, total=len(elements), desc="Scrapping holiday titles"
+        ):
+            try:
+                holiday_titles.append(element.find("span", {"itemprop": "text"}).text)
+            except BaseException:  # pylint: disable=W0718
+                pass
 
+        return holiday_titles
 
-if __name__ == "__main__":
-    result = scrapper()
+    def __init__(self) -> None:
+        self.image_generator = DALLeImageGenerator(
+            key=SECRETS_MANAGER.get_open_ai_token()
+        )
+
+        self._scrap_url = "https://kakoysegodnyaprazdnik.ru/"
+        self._headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+        }
+
+    async def scrap(self, force: bool = False) -> list[Holiday]:
+        """Scraps holiday titles and combines them with images
+
+        Args:
+            force (bool, optional): Scrap even if the data is already scrapped. Defaults to False.
+
+        Returns:
+            list[Holiday]: List of Holiday objects
+        """
+
+        if not force and STORAGE.is_today_file_exists():
+            return STORAGE.get_today_data()
+
+        holidays: list[Holiday] = []
+
+        holiday_titles = self._scrap_holiday_titles()
+        holiday_image_urls = await self.image_generator.get_image_urls(holiday_titles)
+        holiday_image_paths = GALLERY.save_images(holiday_image_urls)
+
+        for title, image_path in zip(holiday_titles, holiday_image_paths):
+            holidays.append(Holiday(title=title, image_path=image_path))
+
+        STORAGE.save_today_data(holidays)
+
+        return holidays

@@ -1,9 +1,0 @@
-{
-  "SLEEP_PERIOD_S": 5,
-  "SCRAP_TIME_S": 57600,
-  "RESPONDENTS": [],
-  "FETCH_DOMAIN": "https://calend.online/holiday/",
-  "INCLUDE_CITY": false,
-  "API_TOKEN": "",
-  "OWNER": ""
-}
