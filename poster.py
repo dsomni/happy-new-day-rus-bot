@@ -28,26 +28,31 @@ class Poster:
 
         for subscriber in SETTINGS_MANAGER.subscribers:
             subscriber_markup = get_basic_markup(subscriber.tg_id)
-            for holiday in tqdm(
-                holidays,
-                total=len(holidays),
-                desc=f"Posting holidays to @{subscriber.tg_alias}",
-            ):
-                if holiday.image is None:
-                    await self._bot.send_message(
-                        subscriber.tg_id,
-                        holiday.emoji_title,
-                        reply_markup=subscriber_markup,
-                    )
-                else:
-                    await self._bot.send_photo(
-                        subscriber.tg_id,
-                        BufferedInputFile(holiday.image, filename=holiday.image_path),
-                        caption=holiday.emoji_title,
-                        reply_markup=subscriber_markup,
-                    )
+            try:
+                for holiday in tqdm(
+                    holidays,
+                    total=len(holidays),
+                    desc=f"Posting holidays to @{subscriber.tg_alias}",
+                ):
+                    if holiday.image is None:
+                        await self._bot.send_message(
+                            subscriber.tg_id,
+                            holiday.emoji_title,
+                            reply_markup=subscriber_markup,
+                        )
+                    else:
+                        await self._bot.send_photo(
+                            subscriber.tg_id,
+                            BufferedInputFile(
+                                holiday.image, filename=holiday.image_path
+                            ),
+                            caption=holiday.emoji_title,
+                            reply_markup=subscriber_markup,
+                        )
 
-                await asyncio.sleep(self._send_messages_delay_seconds)
+                    await asyncio.sleep(self._send_messages_delay_seconds)
+            except BaseException:  # pylint: disable=W0718
+                continue
 
     async def post_from_storage(self):
         """Posts holidays taken from storage to subscribers"""

@@ -1,5 +1,6 @@
 """Contains owner getters handlers"""
 
+import asyncio
 from aiogram import Bot, Router
 from aiogram import types
 from aiogram.filters.command import Command
@@ -47,6 +48,7 @@ async def cmd_subscribers(
             user_id,
             f"{subscriber.tg_id}\n@{subscriber.tg_alias}\n{subscriber.subscribe_date}",
         )
+        await asyncio.sleep(0.5)
 
 
 @router.message(Command("owner"))

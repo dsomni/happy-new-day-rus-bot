@@ -23,6 +23,7 @@ class Scheduler:
             CronTrigger(
                 hour=SETTINGS_MANAGER.scrap_timer.hours,
                 minute=SETTINGS_MANAGER.scrap_timer.minutes,
+                timezone=self._tz,
             ),
         )
 
@@ -32,6 +33,7 @@ class Scheduler:
             CronTrigger(
                 hour=SETTINGS_MANAGER.post_timer.hours,
                 minute=SETTINGS_MANAGER.post_timer.minutes,
+                timezone=self._tz,
             ),
         )
 
@@ -40,12 +42,15 @@ class Scheduler:
             self.clean_wrapper,
             IntervalTrigger(
                 days=SETTINGS_MANAGER.clean_timer.days,
+                timezone=self._tz,
             ),
         )
 
     def __init__(self) -> None:
+        self._tz = DATE_TIME_INFO.tz
+
         self.scheduler = AsyncIOScheduler(
-            timezone=DATE_TIME_INFO.tz,
+            timezone=self._tz,
         )
 
         self._add_scrap_job()
