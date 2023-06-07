@@ -11,7 +11,7 @@ from local_secrets import SECRETS_MANAGER
 from scheduler import SCHEDULER
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.FATAL)
 bot = Bot(token=SECRETS_MANAGER.get_bot_token())
 dp = Dispatcher()
 

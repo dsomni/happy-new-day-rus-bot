@@ -40,7 +40,17 @@ class DALLeImageGenerator(AsyncImageGeneratorInterface):
         fixed_prompt = prompt.replace("«", "'").replace("»", "'")
         return self.translator.translate(fixed_prompt)
 
-    async def _api_request(self, prompt: str) -> str:
+    async def _api_request(self, prompt: str) -> tuple[str, int]:
+        """Request to Open AI api
+
+        Args:
+            prompt (str): image prompt
+
+        Returns:
+            tuple[str, int]: (image_url, number_of_requests_made)
+        """
+
+        requests_number = 0
         try:
             data = f'{{"prompt": "{self._prepare_prompt(prompt)}","n":1,"size":"{self.image_size}x{self.image_size}"}}'
 
@@ -49,36 +59,42 @@ class DALLeImageGenerator(AsyncImageGeneratorInterface):
                 async with session.post(
                     self.url, headers=self.headers, data=data
                 ) as response:
+                    requests_number += 1
                     response_status = response.status
 
                     if response.status == 200:
                         response = await response.json()
 
-                        return response["data"][0]["url"]
+                        return (response["data"][0]["url"], requests_number)
 
                 # 400 means that prompt is inappropriate
                 if response_status != 400:
-                    return ""
+                    return ("", requests_number)
 
                 soft_data = f'{{"prompt": "{self.soft_prompt }","n":1,"size":"{self.image_size}x{self.image_size}"}}'
+
+                await asyncio.sleep(self.request_delay_seconds)
 
                 async with session.post(
                     self.url, headers=self.headers, data=soft_data
                 ) as response:
+                    requests_number += 1
                     if response.status == 200:
                         response = await response.json()
 
-                        return response["data"][0]["url"]
+                        return (response["data"][0]["url"], requests_number)
         except BaseException:  # pylint: disable=W0718
             pass
-        return ""
+        return ("", requests_number)
 
     def __init__(self, key: str, image_size: int = 512) -> None:
         super().__init__()
         self.key = key
         self.image_size = image_size
+
         self.max_rate_per_minute = 5
-        self.request_delay_seconds = 0.5
+        self.request_delay_seconds = (60 / self.max_rate_per_minute) + 1
+
         self.url = "https://api.openai.com/v1/images/generations"
         self.headers = {
             "Content-Type": "application/json",
@@ -90,24 +106,25 @@ class DALLeImageGenerator(AsyncImageGeneratorInterface):
     async def get_image_url(self, prompt):
         return await self._api_request(prompt)
 
-    async def get_image_urls(self, prompts):
-        batches = [
-            prompts[i : i + self.max_rate_per_minute]
-            for i in range(0, len(prompts), self.max_rate_per_minute)
-        ]
-        urls = []
-        total_batches = len(batches)
-        for i, batch in tqdm(
-            enumerate(batches),
-            total=len(batches),
-            desc="Generating images (batches progress)",
+    async def get_image_urls(self, prompts) -> list[str]:
+        urls: list[str] = []
+        total_prompts = len(prompts)
+        for i, prompt in tqdm(
+            enumerate(prompts),
+            total=len(prompts),
+            desc="Generating images",
         ):
             start_time = time.time()
-            for prompt in batch:
-                urls.append(await self._api_request(prompt))
+            url, requests_number = await self._api_request(prompt)
+            urls.append(url)
 
-                await asyncio.sleep(self.request_delay_seconds)
-            if i != total_batches - 1:
+            if i != total_prompts - 1:
                 end_time = time.time()
-                await asyncio.sleep(max(1, 61 - (end_time - start_time)))
+
+                delay = requests_number * self.request_delay_seconds - (
+                    end_time - start_time
+                )
+
+                await asyncio.sleep(max(0, delay))
+
         return urls
