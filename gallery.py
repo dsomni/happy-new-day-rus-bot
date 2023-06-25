@@ -1,4 +1,5 @@
 """Contains Gallery implementations"""
+import base64
 import os
 import shutil
 import requests
@@ -49,6 +50,20 @@ class Gallery:
 
         return image_path
 
+    def _save_image_b64(self, image_idx: int, image_b64_hash: str) -> str:
+        image_path = self._generate_image_path(image_idx)
+
+        if len(image_b64_hash) == 0:
+            return ""
+
+        try:
+            with open(image_path, "wb") as image_file:
+                image_file.write(base64.b64decode(image_b64_hash))
+        except BaseException:  # pylint: disable=W0718
+            return ""
+
+        return image_path
+
     def __init__(self, folder: str = "gallery", extension: str = "png") -> None:
         self.folder = folder
         self.extension = extension
@@ -83,6 +98,25 @@ class Gallery:
             enumerate(urls), total=len(urls), desc="Saving images"
         ):
             image_paths.append(self._save_image(i + start_idx, image_url))
+
+        return image_paths
+
+    def save_images_b64(self, b64_hashes: list[str], start_idx: int = 0) -> list[str]:
+        """Saves images to the disk
+
+        Args:
+            b64_hashes (list[str]): list of images base64 hashes
+            start_idx (int): index of the first image. Defaults to 0
+
+        Returns:
+            list[str]: paths of saved images
+        """
+        self._create_today_folder()
+        image_paths = []
+        for i, image_b64_hash in tqdm(
+            enumerate(b64_hashes), total=len(b64_hashes), desc="Saving images"
+        ):
+            image_paths.append(self._save_image_b64(i + start_idx, image_b64_hash))
 
         return image_paths
 
