@@ -98,3 +98,17 @@ async def cmd_soft_prompt(
     """
 
     await message.answer(SETTINGS_MANAGER.image_soft_prompt)
+
+
+@router.message(Command("should_translate_prompt"))
+@check_message_ownership
+async def cmd_should_translate_prompt(
+    message: types.Message, *args, **kwargs
+):  # pylint: disable=W0613
+    """/should_translate_prompt command handler
+
+    Args:
+        message (types.Message): message object
+    """
+
+    await message.answer(str(SETTINGS_MANAGER.should_translate_prompt))

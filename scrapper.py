@@ -5,10 +5,8 @@ from bs4 import BeautifulSoup
 import requests
 from gallery import GALLERY
 
-from local_secrets import SECRETS_MANAGER
-
 from holiday import Holiday
-from image_generator import DALLeImageGenerator
+from image_generator_b64_based import FusionBrainImageGenerator
 from storage import STORAGE
 
 
@@ -41,9 +39,7 @@ class Scrapper:
         return holiday_titles
 
     def __init__(self) -> None:
-        self.image_generator = DALLeImageGenerator(
-            key=SECRETS_MANAGER.get_open_ai_token()
-        )
+        self.image_generator = FusionBrainImageGenerator()
 
         self._scrap_url = "https://kakoysegodnyaprazdnik.ru/"
         self._headers = {
@@ -65,9 +61,11 @@ class Scrapper:
 
         holidays: list[Holiday] = []
 
-        holiday_titles = self._scrap_holiday_titles()
-        holiday_image_urls = await self.image_generator.get_image_urls(holiday_titles)
-        holiday_image_paths = GALLERY.save_images(holiday_image_urls)
+        holiday_titles = self._scrap_holiday_titles()[:2]
+        holiday_image_hashes = await self.image_generator.get_image_b64_hashes(
+            holiday_titles
+        )
+        holiday_image_paths = GALLERY.save_images_b64(holiday_image_hashes)
 
         for title, image_path in zip(holiday_titles, holiday_image_paths):
             holidays.append(Holiday(title=title, image_path=image_path))

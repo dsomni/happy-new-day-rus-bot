@@ -7,7 +7,7 @@ from tqdm import tqdm
 from settings import SETTINGS_MANAGER
 
 
-class AsyncImageGeneratorInterface:
+class AsyncURLBasedImageGeneratorInterface:
     """Asynchronous image generator Interface"""
 
     async def get_image_url(self, prompt: str) -> str:
@@ -33,7 +33,7 @@ class AsyncImageGeneratorInterface:
         raise NotImplementedError
 
 
-class DALLeImageGenerator(AsyncImageGeneratorInterface):
+class DALLeImageGenerator(AsyncURLBasedImageGeneratorInterface):
     """Asynchronous image generator based on OpenAI DALL-E"""
 
     def _prepare_prompt(self, prompt: str) -> str:
