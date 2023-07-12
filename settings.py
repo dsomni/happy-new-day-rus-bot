@@ -137,6 +137,7 @@ class SettingsManager:
         total_unpack.update(self._unpack_owner())
         total_unpack.update(self._unpack_subscribers())
         total_unpack.update({"image_soft_prompt": self.image_soft_prompt})
+        total_unpack.update({"should_translate_prompt": self.should_translate_prompt})
         return total_unpack
 
     def _load_settings(self):
@@ -165,6 +166,7 @@ class SettingsManager:
         self._load_settings()
 
         self.image_soft_prompt = self._settings["image_soft_prompt"]
+        self.should_translate_prompt = self._settings["should_translate_prompt"]
 
         self._pack_timers()
         self._pack_owner()
@@ -273,6 +275,15 @@ class SettingsManager:
             prompt (str): new prompt
         """
         self.image_soft_prompt = prompt
+        self._save_settings()
+
+    def set_should_translate_prompt(self, should_translate_prompt: bool):
+        """Sets new should_translate_prompt value
+
+        Args:
+            should_translate_prompt (bool): new should_translate_prompt value
+        """
+        self.should_translate_prompt = should_translate_prompt
         self._save_settings()
 
 

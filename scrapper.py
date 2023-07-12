@@ -5,8 +5,6 @@ from bs4 import BeautifulSoup
 import requests
 from gallery import GALLERY
 
-from local_secrets import SECRETS_MANAGER
-
 from holiday import Holiday
 from image_generator_b64_based import FusionBrainImageGenerator
 from storage import STORAGE
@@ -63,7 +61,7 @@ class Scrapper:
 
         holidays: list[Holiday] = []
 
-        holiday_titles = self._scrap_holiday_titles()
+        holiday_titles = self._scrap_holiday_titles()[:2]
         holiday_image_hashes = await self.image_generator.get_image_b64_hashes(
             holiday_titles
         )
