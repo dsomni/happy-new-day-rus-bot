@@ -15,5 +15,6 @@
     "tg_id": 0,
     "tg_alias": ""
   },
-  "image_soft_prompt": "funny happy kittens"
+  "image_soft_prompt": "funny happy kittens",
+  "should_translate_prompt": false
 }
