@@ -33,7 +33,7 @@ async def cmd_set_soft_prompt(
         state (types.FSMContext): FSA state
     """
 
-    await message.answer(text="Введите новый image_soft_prompt (english)")
+    await message.answer(text="Введите новый soft_prompt (english)")
 
     await state.set_state(UpdateSoftPrompt.update_prompt)
 

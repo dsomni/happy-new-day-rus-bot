@@ -1,5 +1,5 @@
 """Contains the SettingsManager class instances"""
-from typing import Optional
+from typing import List, Optional
 import os
 import json
 
@@ -82,6 +82,35 @@ class IntervalTimer:
         return {"days": self.days}
 
 
+class ImageGenerator:
+    """Image generator settings"""
+
+    def __init__(
+        self,
+        soft_prompt: str,
+        should_translate_prompt: bool,
+        styles: List[str],
+        available_styles: List[str],
+    ) -> None:
+        self.soft_prompt = soft_prompt
+        self.should_translate_prompt = should_translate_prompt
+        self.styles = styles
+        self.available_styles = available_styles
+
+    def as_dict(self) -> dict:
+        """Represents the class instance as dict
+
+        Returns:
+            dict
+        """
+        return {
+            "soft_prompt": self.soft_prompt,
+            "should_translate_prompt": self.should_translate_prompt,
+            "styles": self.styles,
+            "available_styles": self.available_styles,
+        }
+
+
 class SettingsManager:
     """Bot settings manager"""
 
@@ -131,13 +160,26 @@ class SettingsManager:
             "subscribers": [subscriber.as_dict() for subscriber in self.subscribers],
         }
 
+    def _pack_image_generator(self):
+        image_generator_dict: dict = self._settings["image_generator"]
+        self.image_generator = ImageGenerator(
+            soft_prompt=image_generator_dict["soft_prompt"],
+            should_translate_prompt=image_generator_dict["should_translate_prompt"],
+            styles=image_generator_dict["styles"],
+            available_styles=image_generator_dict["available_styles"],
+        )
+
+    def _unpack_image_generator(self) -> dict:
+        return {
+            "image_generator": self.image_generator.as_dict(),
+        }
+
     def _unpack_all(self) -> dict:
         total_unpack = {}
         total_unpack.update(self._unpack_timers())
         total_unpack.update(self._unpack_owner())
         total_unpack.update(self._unpack_subscribers())
-        total_unpack.update({"image_soft_prompt": self.image_soft_prompt})
-        total_unpack.update({"should_translate_prompt": self.should_translate_prompt})
+        total_unpack.update(self._unpack_image_generator())
         return total_unpack
 
     def _load_settings(self):
@@ -165,12 +207,10 @@ class SettingsManager:
         self._path = path
         self._load_settings()
 
-        self.image_soft_prompt = self._settings["image_soft_prompt"]
-        self.should_translate_prompt = self._settings["should_translate_prompt"]
-
         self._pack_timers()
         self._pack_owner()
         self._pack_subscribers()
+        self._pack_image_generator()
 
     def is_subscribed(self, tg_id: int) -> bool:
         """Checks whether user is subscribed or not
@@ -274,7 +314,7 @@ class SettingsManager:
         Args:
             prompt (str): new prompt
         """
-        self.image_soft_prompt = prompt
+        self.image_generator.soft_prompt = prompt
         self._save_settings()
 
     def set_should_translate_prompt(self, should_translate_prompt: bool):
@@ -283,7 +323,16 @@ class SettingsManager:
         Args:
             should_translate_prompt (bool): new should_translate_prompt value
         """
-        self.should_translate_prompt = should_translate_prompt
+        self.image_generator.should_translate_prompt = should_translate_prompt
+        self._save_settings()
+
+    def set_image_styles(self, styles: List[str]):
+        """Sets new image styles list
+
+        Args:
+            styles (List[str]): new new image styles list
+        """
+        self.image_generator.styles = styles
         self._save_settings()
 
 

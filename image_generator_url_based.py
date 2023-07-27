@@ -71,7 +71,7 @@ class DALLeImageGenerator(AsyncURLBasedImageGeneratorInterface):
                 if response_status != 400:
                     return ("", requests_number)
 
-                soft_data = f'{{"prompt": "{self.soft_prompt }","n":1,"size":"{self.image_size}x{self.image_size}"}}'
+                soft_data = f'{{"prompt": "{SETTINGS_MANAGER.image_generator.soft_prompt }","n":1,"size":"{self.image_size}x{self.image_size}"}}'
 
                 await asyncio.sleep(self.request_delay_seconds)
 
@@ -101,7 +101,6 @@ class DALLeImageGenerator(AsyncURLBasedImageGeneratorInterface):
             "Authorization": f"Bearer {self.key}",
         }
         self.translator = GoogleTranslator(source="auto", target="en")
-        self.soft_prompt = SETTINGS_MANAGER.image_soft_prompt
 
     async def get_image_url(self, prompt):
         return await self._api_request(prompt)

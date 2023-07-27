@@ -62,6 +62,8 @@ def get_getters_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
         "/owner",
         "/soft_prompt",
         "/should_translate_prompt",
+        "/image_styles",
+        "/available_image_styles",
     ]
 
     builder = ReplyKeyboardBuilder()
@@ -95,6 +97,7 @@ def get_setters_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
         "/set_clean_timer",
         "/set_soft_prompt",
         "/set_should_translate_prompt",
+        "/set_image_styles",
     ]
 
     builder = ReplyKeyboardBuilder()

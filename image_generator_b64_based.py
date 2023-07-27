@@ -63,13 +63,13 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
 
     def _prepare_prompt(self, prompt: str) -> str:
         fixed_prompt = prompt.replace("«", "'").replace("»", "'")
-        if SETTINGS_MANAGER.should_translate_prompt:
+        if SETTINGS_MANAGER.image_generator.should_translate_prompt:
             # translated to en images are more precise
             return self.translator.translate(fixed_prompt)
         return fixed_prompt
 
     def _get_image_style(self) -> str:
-        return random.choice(self.styles)
+        return random.choice(SETTINGS_MANAGER.image_generator.styles)
 
     async def _api_request(self, prompt: str) -> tuple[str, int]:
         """Request to Fusion Brain api
@@ -126,31 +126,6 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
 
     def __init__(self) -> None:
         super().__init__()
-
-        self.styles = [
-            "",
-            "ANIME",
-            "UHD",
-            "CYBERPUNK",
-            "KANDINSKY",
-            "AIVAZOVSKY",
-            # "MALEVICH",
-            # "PICASSO",
-            # "GONCHAROVA",
-            "CLASSICISM",
-            "RENAISSANCE",
-            "OILPAINTING",
-            # "PENCILDRAWING",
-            "DIGITALPAINTING",
-            "MEDIEVALPAINTING",
-            "SOVIETCARTOON",
-            "RENDER",
-            # "CARTOON",
-            "STUDIOPHOTO",
-            "PORTRAITPHOTO",
-            "KHOKHLOMA",
-            # "CRISTMAS",
-        ]
 
         self.max_rate_per_minute = 5
         self.request_delay_seconds = (60 / self.max_rate_per_minute) + 1

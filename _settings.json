@@ -15,6 +15,44 @@
     "tg_id": 0,
     "tg_alias": ""
   },
-  "image_soft_prompt": "funny happy kittens",
-  "should_translate_prompt": false
+  "image_generator": {
+    "soft_prompt": "funny happy kittens",
+    "should_translate_prompt": true,
+    "styles": [
+      "",
+      "ANIME",
+      "PORTRAITPHOTO",
+      "RENAISSANCE",
+      "DIGITALPAINTING",
+      "RENDER",
+      "MEDIEVALPAINTING",
+      "UHD",
+      "SOVIETCARTOON",
+      "OILPAINTING"
+    ],
+    "available_styles": [
+      "",
+      "ANIME",
+      "UHD",
+      "CYBERPUNK",
+      "KANDINSKY",
+      "AIVAZOVSKY",
+      "MALEVICH",
+      "PICASSO",
+      "GONCHAROVA",
+      "CLASSICISM",
+      "RENAISSANCE",
+      "OILPAINTING",
+      "PENCILDRAWING",
+      "DIGITALPAINTING",
+      "MEDIEVALPAINTING",
+      "SOVIETCARTOON",
+      "RENDER",
+      "CARTOON",
+      "STUDIOPHOTO",
+      "PORTRAITPHOTO",
+      "KHOKHLOMA",
+      "CRISTMAS"
+    ]
+  }
 }

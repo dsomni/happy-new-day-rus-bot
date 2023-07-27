@@ -15,6 +15,7 @@ from routers.setter_routers import (
     clean_timer,
     soft_prompt,
     should_translate_prompt,
+    image_styles,
 )
 
 
@@ -27,6 +28,7 @@ router.include_routers(
     clean_timer.router,
     soft_prompt.router,
     should_translate_prompt.router,
+    image_styles.router,
 )
 
 

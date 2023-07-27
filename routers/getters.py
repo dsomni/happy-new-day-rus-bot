@@ -97,7 +97,7 @@ async def cmd_soft_prompt(
         message (types.Message): message object
     """
 
-    await message.answer(SETTINGS_MANAGER.image_soft_prompt)
+    await message.answer(SETTINGS_MANAGER.image_generator.soft_prompt)
 
 
 @router.message(Command("should_translate_prompt"))
@@ -111,4 +111,32 @@ async def cmd_should_translate_prompt(
         message (types.Message): message object
     """
 
-    await message.answer(str(SETTINGS_MANAGER.should_translate_prompt))
+    await message.answer(str(SETTINGS_MANAGER.image_generator.should_translate_prompt))
+
+
+@router.message(Command("image_styles"))
+@check_message_ownership
+async def cmd_image_styles(
+    message: types.Message, *args, **kwargs
+):  # pylint: disable=W0613
+    """/image_styles command handler
+
+    Args:
+        message (types.Message): message object
+    """
+
+    await message.answer(", ".join(SETTINGS_MANAGER.image_generator.styles))
+
+
+@router.message(Command("available_image_styles"))
+@check_message_ownership
+async def cmd_available_image_styles(
+    message: types.Message, *args, **kwargs
+):  # pylint: disable=W0613
+    """/available_image_styles command handler
+
+    Args:
+        message (types.Message): message object
+    """
+
+    await message.answer(", ".join(SETTINGS_MANAGER.image_generator.available_styles))
