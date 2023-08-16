@@ -40,8 +40,8 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
     """Asynchronous image generator based on Fusion Brain"""
 
     async def _check_generation_status(self, result_uuid: str) -> Optional[dict]:
-        max_attempts: int = 40
-        sleep_period_seconds: float = 3
+        max_attempts: int = 9
+        sleep_period_seconds: float = 10
 
         status_url = (
             f"https://api.fusionbrain.ai/web/api/v1/text2image/status/{result_uuid}"
@@ -71,32 +71,21 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
     def _get_image_style(self) -> str:
         return random.choice(SETTINGS_MANAGER.image_generator.styles)
 
-    async def _api_request(self, prompt: str) -> tuple[str, int]:
+    async def _api_request(self, parameters: str) -> str:
         """Request to Fusion Brain api
 
         Args:
-            prompt (str): image prompt
+            parameters (str): dumped prompt parameters
 
         Returns:
-            tuple[str, int]: (image_b64, number_of_requests_made)
+            str: uuid of result
         """
 
-        dumped_parameters = json.dumps(
-            {
-                "type": "GENERATE",
-                "generateParams": {"query": self._prepare_prompt(prompt)},
-                "width": self.image_width,
-                "height": self.image_height,
-                "style": self._get_image_style(),
-            }
-        )
-
-        requests_number = 0
         try:
             form_data = aiohttp.FormData()
             form_data.add_field(
                 "params",
-                dumped_parameters,
+                parameters,
                 filename="blob",
                 content_type="application/json",
             )
@@ -105,29 +94,87 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
                 async with session.post(
                     self.url, headers=self.headers, data=form_data
                 ) as response:
-                    requests_number += 1
-
                     if not response.ok:
-                        return ("", requests_number)
+                        return ""
                     start_response_json = await response.json()
 
-            result_uuid = start_response_json["uuid"]
-
-            result_dict = await self._check_generation_status(result_uuid)
-
-            if result_dict is None:
-                return ("", requests_number)
-
-            return (result_dict["images"][0], requests_number)
+            result_uuid = start_response_json.get("uuid", None)
+            if result_uuid is None:
+                LOGGER.log("No UUID", message_type="Error")
+                return ""
+            return result_uuid
 
         except BaseException:  # pylint: disable=W0718
             pass
-        return ("", requests_number)
+        return ""
+
+    async def _api_wrapper(self, prompt: str) -> tuple[str, int]:
+        """Wraps request to Fusion Brain api
+
+        Args:
+            prompt (str): image prompt
+
+        Returns:
+            tuple[str, int]: (image_b64, number_of_requests_made)
+        """
+
+        style = self._get_image_style()
+
+        dumped_parameters = json.dumps(
+            {
+                "type": "GENERATE",
+                "generateParams": {"query": self._prepare_prompt(prompt)},
+                "width": self.image_width,
+                "height": self.image_height,
+                "style": style,
+            }
+        )
+
+        result_uuid = await self._api_request(dumped_parameters)
+        requests_number = 1
+
+        if result_uuid is None:
+            return ("", requests_number)
+
+        result_dict = await self._check_generation_status(result_uuid)
+
+        if result_dict is None:
+            return ("", requests_number)
+
+        if result_dict.get("censored", False) is False:
+            return (result_dict["images"][0], requests_number)
+
+        soft_parameters = json.dumps(
+            {
+                "type": "GENERATE",
+                "generateParams": {
+                    "query": self._prepare_prompt(
+                        SETTINGS_MANAGER.image_generator.soft_prompt
+                    )
+                },
+                "width": self.image_width,
+                "height": self.image_height,
+                "style": style,
+            }
+        )
+
+        result_uuid = await self._api_request(soft_parameters)
+        requests_number += 1
+
+        if result_uuid is None:
+            return ("", requests_number)
+
+        result_dict = await self._check_generation_status(result_uuid)
+
+        if result_dict is None:
+            return ("", requests_number)
+
+        return (result_dict["images"][0], requests_number)
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.max_rate_per_minute = 5
+        self.max_rate_per_minute = 1.5
         self.request_delay_seconds = (60 / self.max_rate_per_minute) + 1
 
         self.image_height = 512
@@ -137,6 +184,7 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
         self.headers = {
             "Host": "api.fusionbrain.ai",
             "Origin": "https://editor.fusionbrain.ai",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
         }
         self.translator = GoogleTranslator(source="auto", target="en")
 
@@ -152,7 +200,7 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
             desc="Generating images",
         ):
             start_time = time.time()
-            b64_hash, requests_number = await self._api_request(prompt)
+            b64_hash, requests_number = await self._api_wrapper(prompt)
             b64_hashes.append(b64_hash)
 
             if i != total_prompts - 1:
