@@ -1,12 +1,12 @@
 """Contains Scrapper that scraps holidays"""
 
-from tqdm import tqdm
 from bs4 import BeautifulSoup
 import requests
 from gallery import GALLERY
 
 from holiday import Holiday
 from image_generator_b64_based import FusionBrainImageGenerator
+from logger import LOGGER
 from storage import STORAGE
 
 
@@ -28,7 +28,7 @@ class Scrapper:
             )
         )
 
-        for element in tqdm(
+        for element in LOGGER.get_tqdm(
             elements, total=len(elements), desc="Scrapping holiday titles"
         ):
             try:

@@ -5,7 +5,7 @@ from typing import Optional
 import aiohttp
 import asyncio
 from deep_translator import GoogleTranslator
-from tqdm import tqdm
+from logger import LOGGER
 
 from settings import SETTINGS_MANAGER
 
@@ -146,7 +146,7 @@ class FusionBrainImageGenerator(AsyncB64BasedImageGeneratorInterface):
     async def get_image_b64_hashes(self, prompts) -> list[str]:
         b64_hashes: list[str] = []
         total_prompts = len(prompts)
-        for i, prompt in tqdm(
+        for i, prompt in LOGGER.get_tqdm(
             enumerate(prompts),
             total=len(prompts),
             desc="Generating images",

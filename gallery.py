@@ -4,9 +4,9 @@ import os
 import shutil
 import requests
 
-from tqdm import tqdm
 
 from date import DATE_TIME_INFO
+from logger import LOGGER
 
 
 class Gallery:
@@ -94,7 +94,7 @@ class Gallery:
         """
         self._create_today_folder()
         image_paths = []
-        for i, image_url in tqdm(
+        for i, image_url in LOGGER.get_tqdm(
             enumerate(urls), total=len(urls), desc="Saving images"
         ):
             image_paths.append(self._save_image(i + start_idx, image_url))
@@ -113,7 +113,7 @@ class Gallery:
         """
         self._create_today_folder()
         image_paths = []
-        for i, image_b64_hash in tqdm(
+        for i, image_b64_hash in LOGGER.get_tqdm(
             enumerate(b64_hashes), total=len(b64_hashes), desc="Saving images"
         ):
             image_paths.append(self._save_image_b64(i + start_idx, image_b64_hash))
@@ -149,7 +149,7 @@ class Gallery:
 
         images = []
 
-        for image_path in tqdm(image_paths, desc="Reading images"):
+        for image_path in LOGGER.get_tqdm(image_paths, desc="Reading images"):
             images.append(self.read_image(image_path))
 
         return images

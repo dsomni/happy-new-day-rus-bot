@@ -1,12 +1,12 @@
 """Contains Poster that posts holidays to the bot"""
 import asyncio
-from tqdm import tqdm
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
 from holiday import Holiday
 from keyboards.basic import get_basic_markup
+from logger import LOGGER
 
 from settings import SETTINGS_MANAGER
 from storage import STORAGE
@@ -29,7 +29,7 @@ class Poster:
         for subscriber in SETTINGS_MANAGER.subscribers:
             subscriber_markup = get_basic_markup(subscriber.tg_id)
             try:
-                for holiday in tqdm(
+                for holiday in LOGGER.get_tqdm(
                     holidays,
                     total=len(holidays),
                     desc=f"Posting holidays to @{subscriber.tg_alias}",

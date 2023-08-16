@@ -2,7 +2,7 @@ import time
 import aiohttp
 import asyncio
 from deep_translator import GoogleTranslator
-from tqdm import tqdm
+from logger import LOGGER
 
 from settings import SETTINGS_MANAGER
 
@@ -108,7 +108,7 @@ class DALLeImageGenerator(AsyncURLBasedImageGeneratorInterface):
     async def get_image_urls(self, prompts) -> list[str]:
         urls: list[str] = []
         total_prompts = len(prompts)
-        for i, prompt in tqdm(
+        for i, prompt in LOGGER.get_tqdm(
             enumerate(prompts),
             total=len(prompts),
             desc="Generating images",

@@ -111,6 +111,26 @@ class ImageGenerator:
         }
 
 
+class LoggerSettings:
+    """Logger settings"""
+
+    def __init__(
+        self,
+        init_dict: dict,
+    ) -> None:
+        self.should_log = init_dict["logger_settings"]["should_log"]
+
+    def as_dict(self) -> dict:
+        """Represents the class instance as dict
+
+        Returns:
+            dict
+        """
+        return {
+            "should_log": self.should_log,
+        }
+
+
 class SettingsManager:
     """Bot settings manager"""
 
@@ -174,12 +194,19 @@ class SettingsManager:
             "image_generator": self.image_generator.as_dict(),
         }
 
+    def _pack_logger_settings(self):
+        self.logger_settings = LoggerSettings(self._settings)
+
+    def _unpack_logger_settings(self) -> dict:
+        return {"logger_settings": self.logger_settings.as_dict()}
+
     def _unpack_all(self) -> dict:
         total_unpack = {}
         total_unpack.update(self._unpack_timers())
         total_unpack.update(self._unpack_owner())
         total_unpack.update(self._unpack_subscribers())
         total_unpack.update(self._unpack_image_generator())
+        total_unpack.update(self._unpack_logger_settings())
         return total_unpack
 
     def _load_settings(self):
@@ -211,6 +238,15 @@ class SettingsManager:
         self._pack_owner()
         self._pack_subscribers()
         self._pack_image_generator()
+        self._pack_logger_settings()
+
+    def should_log(self) -> bool:
+        """Whether should log messages into console or not
+
+        Returns:
+            bool: should log to console or not
+        """
+        return self.logger_settings.should_log
 
     def is_subscribed(self, tg_id: int) -> bool:
         """Checks whether user is subscribed or not

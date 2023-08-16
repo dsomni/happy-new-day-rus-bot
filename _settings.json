@@ -1,4 +1,5 @@
 {
+  "logger_settings": { "should_log": true },
   "scrap_timer": {
     "hours": 1,
     "minutes": 0
