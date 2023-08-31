@@ -128,6 +128,7 @@ def get_actions_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
         "/scrap_force",
         "/scrap",
         "/post",
+        "/post_to_owner",
         "/clean",
     ]
 

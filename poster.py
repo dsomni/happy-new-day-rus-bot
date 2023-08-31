@@ -1,5 +1,6 @@
 """Contains Poster that posts holidays to the bot"""
 import asyncio
+from typing import List
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
@@ -8,7 +9,7 @@ from holiday import Holiday
 from keyboards.basic import get_basic_markup
 from logger import LOGGER
 
-from settings import SETTINGS_MANAGER
+from settings import SETTINGS_MANAGER, PostReceivers, Subscriber
 from storage import STORAGE
 
 
@@ -19,14 +20,19 @@ class Poster:
         self._bot = bot
         self._send_messages_delay_seconds: float = 0.2
 
-    async def post(self, holidays: list[Holiday]):
+    async def _post(
+        self,
+        holidays: List[Holiday],
+        receivers: List[PostReceivers],
+    ):
         """Posts holidays to subscribers
 
         Args:
             holidays (list[Holiday]): list of holidays to post
+            receivers (list[Subscriber]): list of receivers to post to
         """
 
-        for subscriber in SETTINGS_MANAGER.subscribers:
+        for subscriber in receivers:
             subscriber_markup = get_basic_markup(subscriber.tg_id)
             try:
                 for holiday in LOGGER.get_tqdm(
@@ -54,10 +60,22 @@ class Poster:
             except BaseException:  # pylint: disable=W0718
                 continue
 
-    async def post_from_storage(self):
+    async def post(self):
         """Posts holidays taken from storage to subscribers"""
 
         if not STORAGE.is_today_file_exists():
             raise FileNotFoundError()
 
-        await self.post(STORAGE.get_today_data())
+        await self._post(
+            STORAGE.get_today_data(), SETTINGS_MANAGER.get_subscribers_as_receivers()
+        )
+
+    async def post_to_owner(self):
+        """Posts holidays taken from storage to subscribers"""
+
+        if not STORAGE.is_today_file_exists():
+            raise FileNotFoundError()
+
+        await self._post(
+            STORAGE.get_today_data(), [SETTINGS_MANAGER.get_owner_as_receiver()]
+        )

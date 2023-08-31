@@ -7,8 +7,8 @@ import json
 from date import DATE_TIME_INFO
 
 
-class Owner:
-    """Bot owner"""
+class PostReceivers:
+    """Receivers"""
 
     def __init__(
         self,
@@ -17,6 +17,10 @@ class Owner:
     ) -> None:
         self.tg_id = tg_id  # pylint: disable=C0103
         self.tg_alias = tg_alias
+
+
+class Owner(PostReceivers):
+    """Bot owner"""
 
     def as_dict(self) -> dict:
         """Represents the class instance as dict
@@ -239,6 +243,24 @@ class SettingsManager:
         self._pack_subscribers()
         self._pack_image_generator()
         self._pack_logger_settings()
+
+    def get_subscribers_as_receivers(self) -> List[PostReceivers]:
+        """Represents subscribers as PostReceivers
+
+        Returns:
+            List[PostReceivers]: post receivers list
+        """
+        return [
+            PostReceivers(**subscriber.as_dict()) for subscriber in self.subscribers
+        ]
+
+    def get_owner_as_receiver(self) -> PostReceivers:
+        """Represents owner as PostReceiver
+
+        Returns:
+            PostReceivers: post receiver
+        """
+        return PostReceivers(**self.owner.as_dict())
 
     def should_log(self) -> bool:
         """Whether should log messages into console or not

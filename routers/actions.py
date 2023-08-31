@@ -80,6 +80,24 @@ async def cmd_post(
     await message.answer("Posting was successfully finished ")
 
 
+@router.message(Command("post_to_owner"))
+@check_message_ownership
+async def cmd_post_to_owner(
+    message: types.Message, bot: Bot, *args, **kwargs
+):  # pylint: disable=W0613
+    """/post_to_owner command handler
+
+    Args:
+        message (types.Mes sage): message object
+    """
+
+    user_id: int = message.from_user.id  # type: ignore
+
+    await bot.send_message(user_id, "Start posting")
+    await SCHEDULER.post_to_owner_wrapper()
+    await message.answer("Posting was successfully finished ")
+
+
 @router.message(Command("clean"))
 @check_message_ownership
 async def cmd_clean(

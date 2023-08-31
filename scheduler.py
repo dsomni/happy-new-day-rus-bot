@@ -66,11 +66,18 @@ class Scheduler:
         await self.scrapper.scrap(force=force)
 
     async def post_wrapper(self):
-        """Wrapper over Poster function"""
+        """Wrapper over Poster function post"""
         if not STORAGE.is_today_file_exists():
             await self.scrap_wrapper()
 
-        await self.poster.post_from_storage()
+        await self.poster.post()
+
+    async def post_to_owner_wrapper(self):
+        """Wrapper over Poster function post_to_owner"""
+        if not STORAGE.is_today_file_exists():
+            await self.scrap_wrapper()
+
+        await self.poster.post_to_owner()
 
     def clean_wrapper(self):
         """Wrapper over clean() functions"""
