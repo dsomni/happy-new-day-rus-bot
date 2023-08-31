@@ -61,7 +61,7 @@ class Scrapper:
 
         holidays: list[Holiday] = []
 
-        holiday_titles = self._scrap_holiday_titles()[:1]
+        holiday_titles = self._scrap_holiday_titles()
         holiday_image_hashes = await self.image_generator.get_image_b64_hashes(
             holiday_titles
         )
