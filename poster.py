@@ -9,7 +9,7 @@ from holiday import Holiday
 from keyboards.basic import get_basic_markup
 from logger import LOGGER
 
-from settings import SETTINGS_MANAGER, PostReceivers, Subscriber
+from settings import SETTINGS_MANAGER, PostReceivers
 from storage import STORAGE
 
 
@@ -31,7 +31,6 @@ class Poster:
             holidays (list[Holiday]): list of holidays to post
             receivers (list[Subscriber]): list of receivers to post to
         """
-
         for subscriber in receivers:
             subscriber_markup = get_basic_markup(subscriber.tg_id)
             try:

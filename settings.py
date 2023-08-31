@@ -250,8 +250,13 @@ class SettingsManager:
         Returns:
             List[PostReceivers]: post receivers list
         """
+
         return [
-            PostReceivers(**subscriber.as_dict()) for subscriber in self.subscribers
+            PostReceivers(
+                tg_id=subscriber.tg_id,
+                tg_alias=subscriber.tg_alias,
+            )
+            for subscriber in self.subscribers
         ]
 
     def get_owner_as_receiver(self) -> PostReceivers:
@@ -260,7 +265,10 @@ class SettingsManager:
         Returns:
             PostReceivers: post receiver
         """
-        return PostReceivers(**self.owner.as_dict())
+        return PostReceivers(
+            tg_id=self.owner.tg_id,
+            tg_alias=self.owner.tg_alias,
+        )
 
     def should_log(self) -> bool:
         """Whether should log messages into console or not
