@@ -1,6 +1,4 @@
 """Contains basic keyboard builder"""
-from typing import Any
-
 from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
@@ -31,6 +29,7 @@ def get_basic_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
             "/getters",
             "/setters",
             "/actions",
+            "/dev-actions",
         ]
 
     builder = ReplyKeyboardBuilder()
@@ -130,6 +129,34 @@ def get_actions_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
         "/post",
         "/post_to_owner",
         "/clean",
+    ]
+
+    builder = ReplyKeyboardBuilder()
+    for command in commands:
+        builder.add(types.KeyboardButton(text=command))
+    builder.adjust(2)
+    builder.row(types.KeyboardButton(text="/back"))
+
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_dev_actions_markup(tg_id: int) -> types.ReplyKeyboardMarkup:
+    """Returns developer actions keyboard markup based on the user telegram id
+
+    Args:
+        tg_id (int): user telegram id
+
+    Returns:
+        Keyboard markup
+    """
+
+    if not SETTINGS_MANAGER.is_owner(tg_id):
+        builder = ReplyKeyboardBuilder()
+        builder.add(types.KeyboardButton(text="/back"))
+        return builder.as_markup(resize_keyboard=True)
+
+    commands = [
+        "/scrap_n_post_sample",
     ]
 
     builder = ReplyKeyboardBuilder()

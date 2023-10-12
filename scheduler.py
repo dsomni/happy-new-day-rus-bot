@@ -57,13 +57,13 @@ class Scheduler:
         self._add_post_job()
         self._add_clean_job()
 
-    async def scrap_wrapper(self, force: bool = False):
+    async def scrap_wrapper(self, force: bool = False, limit: int = 0):
         """Wrapper over Scrapper function
 
         Args:
             force (bool, optional): Scrap even if the data is already scrapped. Defaults to False.
         """
-        await self.scrapper.scrap(force=force)
+        await self.scrapper.scrap(force=force, limit=limit)
 
     async def post_wrapper(self):
         """Wrapper over Poster function post"""

@@ -46,11 +46,13 @@ class Scrapper:
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
         }
 
-    async def scrap(self, force: bool = False) -> list[Holiday]:
+    async def scrap(self, force: bool = False, limit: int = 0) -> list[Holiday]:
         """Scraps holiday titles and combines them with images
 
         Args:
             force (bool, optional): Scrap even if the data is already scrapped. Defaults to False.
+            limit (int, optional): Limit scrap data number. If set to0, then scrap all data.
+            Defaults to 0.
 
         Returns:
             list[Holiday]: List of Holiday objects
@@ -62,6 +64,8 @@ class Scrapper:
         holidays: list[Holiday] = []
 
         holiday_titles = self._scrap_holiday_titles()
+        if limit > 0:
+            holiday_titles = holiday_titles[:limit]
         holiday_image_hashes = await self.image_generator.get_image_b64_hashes(
             holiday_titles
         )
