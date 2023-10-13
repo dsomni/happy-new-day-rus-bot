@@ -5,7 +5,8 @@ import requests
 from gallery import GALLERY
 
 from holiday import Holiday
-from image_generator_b64_based import FusionBrainImageGenerator
+from image_generator_model_based import HuggingFaceImageGenerator
+
 from logger import LOGGER
 from storage import STORAGE
 
@@ -39,7 +40,7 @@ class Scrapper:
         return holiday_titles
 
     def __init__(self) -> None:
-        self.image_generator = FusionBrainImageGenerator()
+        self.image_generator = HuggingFaceImageGenerator()
 
         self._scrap_url = "https://kakoysegodnyaprazdnik.ru/"
         self._headers = {
@@ -66,9 +67,8 @@ class Scrapper:
         holiday_titles = self._scrap_holiday_titles()
         if limit > 0:
             holiday_titles = holiday_titles[:limit]
-        holiday_image_hashes = await self.image_generator.get_image_b64_hashes(
-            holiday_titles
-        )
+        holiday_image_hashes = self.image_generator.get_image_b64_hashes(holiday_titles)
+
         holiday_image_paths = GALLERY.save_images_b64(holiday_image_hashes)
 
         for title, image_path in zip(holiday_titles, holiday_image_paths):

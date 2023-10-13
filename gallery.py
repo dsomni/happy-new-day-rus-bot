@@ -50,7 +50,7 @@ class Gallery:
 
         return image_path
 
-    def _save_image_b64(self, image_idx: int, image_b64_hash: str) -> str:
+    def _save_image_b64(self, image_idx: int, image_b64_hash: bytes) -> str:
         image_path = self._generate_image_path(image_idx)
 
         if len(image_b64_hash) == 0:
@@ -59,7 +59,8 @@ class Gallery:
         try:
             with open(image_path, "wb") as image_file:
                 image_file.write(base64.b64decode(image_b64_hash))
-        except BaseException:  # pylint: disable=W0718
+        except BaseException as e:  # pylint: disable=W0718
+            print(e)
             return ""
 
         return image_path
@@ -101,7 +102,7 @@ class Gallery:
 
         return image_paths
 
-    def save_images_b64(self, b64_hashes: list[str], start_idx: int = 0) -> list[str]:
+    def save_images_b64(self, b64_hashes: list[bytes], start_idx: int = 0) -> list[str]:
         """Saves images to the disk
 
         Args:

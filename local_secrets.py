@@ -12,6 +12,7 @@ class SecretsManager:
         self._secrets = dotenv.dotenv_values(self._path)
         self._bot_token: str = self._secrets["BOT_TOKEN"]  # type: ignore
         self._open_ai_token: str = self._secrets["OPENAI_TOKEN"]  # type: ignore
+        self._hf_token: str = self._secrets["HUGGINGFACE_TOKEN"]  # type: ignore
 
     def get_bot_token(self) -> str:
         """Returns telegram bot token
@@ -20,6 +21,14 @@ class SecretsManager:
             str: bot token
         """
         return self._bot_token
+
+    def get_hf_token(self) -> str:
+        """Returns Hugging Face access token
+
+        Returns:
+            str: Hugging Face  access token
+        """
+        return self._hf_token
 
     def get_open_ai_token(self) -> str:
         """Returns Open AI access token
