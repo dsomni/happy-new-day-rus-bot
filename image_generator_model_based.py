@@ -109,7 +109,7 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
 
         self.timeout = 20
 
-        self.max_rate_per_minute = 3
+        self.max_rate_per_minute = 2
         self.request_delay_seconds = (60 / self.max_rate_per_minute) + 1
 
         self.headers = {"Authorization": f"Bearer {SECRETS_MANAGER.get_hf_token()}"}
