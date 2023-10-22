@@ -2,9 +2,6 @@ import base64
 import json
 import random
 import time
-from typing import Optional
-import aiohttp
-import asyncio
 from deep_translator import GoogleTranslator
 import requests
 from local_secrets import SECRETS_MANAGER
@@ -60,22 +57,39 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
             str: uuid of result
         """
 
-        try:
-            response = requests.post(
-                url,
-                headers=self.headers,
-                json={
-                    "inputs": self._prepare_prompt(prompt),
-                },
-                timeout=self.timeout,
-            )
-            if not response.ok:
-                return bytes([])
-            image_bytes = response.content
-            return base64.b64encode(image_bytes)
+        attempts = 10
+        parts = attempts - 1
+        for i in range(attempts):
+            try:
+                response = requests.post(
+                    url,
+                    headers=self.headers,
+                    json={
+                        "inputs": self._prepare_prompt(prompt),
+                    },
+                    timeout=self.timeout,
+                )
+                if response.ok:
+                    return base64.b64encode(response.content)
 
-        except BaseException:  # pylint: disable=W0718
-            pass
+                if i == parts:
+                    break
+                try:
+                    wait_time = (
+                        float(
+                            json.loads(
+                                response.content.decode("utf8").replace("'", '"')
+                            )["estimated_time"]
+                        )
+                        / parts
+                    )
+
+                    time.sleep(wait_time)
+                except BaseException:  # pylint: disable=W0718
+                    break
+
+            except BaseException:  # pylint: disable=W0718
+                pass
         return bytes([])
 
     def _api_wrapper(self, prompt: str) -> bytes:
@@ -90,12 +104,12 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
 
         style = self._get_image_style()
 
-        model = self.basic_model
-        if style == "PIXELART":
-            model = self.pixel_art_model
+        model = self.models_dict.get(style, None)
+        if model is None:
+            model = self.basic_model
 
-        if style != "":
-            prompt = f"{prompt} in style '{style}'"
+            if style != "":
+                prompt = f"{prompt} in style '{style}'"
 
         return self._api_request(self.api_url + model, prompt)
 
@@ -105,11 +119,24 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         self.api_url = "https://api-inference.huggingface.co/models/"
 
         self.basic_model = "stabilityai/stable-diffusion-xl-base-1.0"
-        self.pixel_art_model = "nerijs/pixel-art-xl"
 
-        self.timeout = 20
+        self.models_dict = dict(
+            {
+                "PIXELART": "nerijs/pixel-art-xl",
+                "ANIME": "Linaqruf/animagine-xl",
+                "REALISTIC1": "digiplay/AbsoluteReality_v1.8.1",
+                "REALISTIC2": "Yntec/epiCPhotoGasm",
+                "INKPUNK": "Envvi/Inkpunk-Diffusion",
+                "HUM": "Yntec/humu",
+                "CARTOON": "Yntec/sexyToons",
+                "XXX": "invisiblecat/Uber_Realistic_Porn_Merge_V1.3",
+                "IKEA": "ostris/ikea-instructions-lora-sdxl",
+            }
+        )
 
-        self.max_rate_per_minute = 2
+        self.timeout = 30
+
+        self.max_rate_per_minute = 3
         self.request_delay_seconds = (60 / self.max_rate_per_minute) + 1
 
         self.headers = {"Authorization": f"Bearer {SECRETS_MANAGER.get_hf_token()}"}
