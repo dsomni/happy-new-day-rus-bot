@@ -2,10 +2,12 @@ import base64
 import json
 import random
 import time
+import grequests
 from deep_translator import GoogleTranslator
 import requests
 from local_secrets import SECRETS_MANAGER
 from logger import LOGGER
+
 
 from settings import SETTINGS_MANAGER
 
@@ -119,6 +121,31 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
 
         return self._api_request(self.api_url + model, prompt)
 
+    def _build_request(self, prompt: str, idx: int = 0) -> tuple[str, str]:
+        style = self._get_image_style()
+
+        model = self.models_dict.get(style, None)
+        final_prompt = prompt
+
+        if model is None:
+            model = self.basic_models[idx % len(self.basic_models)]
+
+            if style != "":
+                final_prompt = f"{prompt} in style '{style}'"
+
+        return self.api_url + model, self._prepare_prompt(final_prompt)
+
+    def _build_requests(self, prompts: list[str]) -> list[tuple[str, str]]:
+        return [self._build_request(prompt, i) for i, prompt in enumerate(prompts)]
+
+    def _process_response(self, r: requests.Response) -> bytes:
+        if not r.ok:
+            return bytes([])
+        try:
+            return base64.b64encode(r.content)
+        except:
+            return bytes([])
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -154,7 +181,9 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         self.attempt_rounds = 10
         self.model_attempts = 3
 
-        self.delay_s = 0.3
+        self.delay_s = 5
+
+        self._requests_size = 10
 
     def get_image_b64_hash(self, prompt):
         return self._api_wrapper(prompt)
@@ -168,23 +197,42 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         remain_prompts = prompts.copy()
 
         for k in range(self.attempt_rounds):
+
             if len(remain_prompts) == 0:
                 break
 
             running_prompts = remain_prompts.copy()
             remain_prompts = []
 
-            for i, prompt in LOGGER.get_tqdm(
-                enumerate(running_prompts),
+            rs = [
+                grequests.post(
+                    url,
+                    headers=self.headers,
+                    json={
+                        "inputs": model_input,
+                    },
+                    timeout=self.timeout,
+                )
+                for (url, model_input) in self._build_requests(running_prompts)
+            ]
+
+            iterator = grequests.imap_enumerated(rs, size=self._requests_size)
+
+            for idx, r in LOGGER.get_tqdm(
+                iterator,
                 total=len(running_prompts),
                 desc=f"Generating images (round {k+1})",
             ):
-                b64_hash = self._api_wrapper(prompt, i)
+                if r is None:
+                    remain_prompts.append(running_prompts[idx])
+                    continue
+                b64_hash = self._process_response(r)
                 if not b64_hash:
-                    remain_prompts.append(b64_hash)
+                    remain_prompts.append(running_prompts[idx])
                     continue
 
-                prompt_hash_dict[prompt] = b64_hash
-                time.sleep(self.delay_s)
+                prompt_hash_dict[running_prompts[idx]] = b64_hash
+
+            time.sleep(self.delay_s)
 
         return [prompt_hash_dict[prompt] for prompt in prompts]

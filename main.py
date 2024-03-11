@@ -1,5 +1,7 @@
 """Contains main functionality """
 
+import grequests
+
 import asyncio
 import logging
 

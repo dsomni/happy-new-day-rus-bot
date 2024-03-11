@@ -1,3 +1,4 @@
+import grequests
 import os
 from typing import Optional
 from bs4 import BeautifulSoup
@@ -191,6 +192,7 @@ class HolidayScrapper:
                     link = anchor["href"]
                     name = anchor.text
                     sleep(self._request_delay)
+
                     person_response = requests.get(
                         link,
                         headers=self._headers,
@@ -202,9 +204,9 @@ class HolidayScrapper:
                         "span", {"class": "personDate"}, recursive=True
                     )
                     birth = dates[0].text.strip()
+                    death = "настоящее время"
                     if len(dates) > 1:
                         death = dates[2].text.strip()
-                    death = "настоящее время"
 
                     holiday_titles.append(f"{name} ({birth} — {death}), {desc}")
 
