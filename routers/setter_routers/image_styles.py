@@ -33,9 +33,12 @@ async def cmd_set_image_styles(
         state (types.FSMContext): FSA state
     """
 
+    await message.answer(text="Список доступных стилей:")
     await message.answer(
-        text=f"Список доступных стилей:\n{', '.join(SETTINGS_MANAGER.image_generator.available_styles)}"
+        text=", ".join(SETTINGS_MANAGER.image_generator.available_styles)
     )
+    await message.answer(text="Список текущих стилей:")
+    await message.answer(text=", ".join(SETTINGS_MANAGER.image_generator.styles))
 
     await message.answer(text="Введите новый список стилей через запятую (english)")
 
@@ -59,10 +62,7 @@ async def update_image_styles(
             message.text = ""
         image_styles = list(
             set(
-                filter(
-                    lambda s: s in SETTINGS_MANAGER.image_generator.available_styles,
-                    map(lambda w: w.strip(), message.text.strip().upper().split(",")),
-                )
+                map(lambda w: w.strip(), message.text.strip().upper().split(",")),
             )
         )
 

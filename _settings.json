@@ -20,7 +20,6 @@
     "soft_prompt": "funny happy kittens",
     "should_translate_prompt": true,
     "styles": [
-      "",
       "ANIME",
       "REALISTIC1",
       "REALISTIC2",
@@ -41,7 +40,6 @@
       "ALIEN"
     ],
     "available_styles": [
-      "",
       "ANIME",
       "REALISTIC1",
       "REALISTIC2",

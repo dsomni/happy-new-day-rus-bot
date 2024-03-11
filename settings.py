@@ -1,4 +1,5 @@
 """Contains the SettingsManager class instances"""
+
 from typing import List, Optional
 import os
 import json
@@ -243,6 +244,14 @@ class SettingsManager:
         self._pack_subscribers()
         self._pack_image_generator()
         self._pack_logger_settings()
+
+    def get_image_soft_prompt(self) -> str:
+        """Gets image soft prompt
+
+        Returns:
+            prompt (str): new prompt
+        """
+        return self.image_generator.soft_prompt
 
     def get_subscribers_as_receivers(self) -> List[PostReceivers]:
         """Represents subscribers as PostReceivers
