@@ -33,16 +33,18 @@ class Scrapper:
 
         holidays: list[Holiday] = []
 
-        holiday_titles = self.holiday_scrapper.get_holidays(force=force)
+        holiday_pairs = self.holiday_scrapper.get_holidays(force=force)
         if limit > 0:
-            holiday_titles = holiday_titles[:limit]
+            holiday_pairs = holiday_pairs[:limit]
 
-        holiday_image_hashes = self.image_generator.get_image_b64_hashes(holiday_titles)
+        holiday_image_hashes = self.image_generator.get_image_b64_hashes(
+            [f"{t}\n{d}" for t, d in holiday_pairs]
+        )
 
         holiday_image_paths = GALLERY.save_images_b64(holiday_image_hashes)
 
-        for title, image_path in zip(holiday_titles, holiday_image_paths):
-            holidays.append(Holiday(title=title, image_path=image_path))
+        for (title, desc), image_path in zip(holiday_pairs, holiday_image_paths):
+            holidays.append(Holiday(title=title, desc=desc, image_path=image_path))
 
         STORAGE.save_today_data(holidays)
 

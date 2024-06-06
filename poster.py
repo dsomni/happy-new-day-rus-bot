@@ -1,4 +1,5 @@
 """Contains Poster that posts holidays to the bot"""
+
 import asyncio
 from typing import List
 
@@ -42,7 +43,7 @@ class Poster:
                     if holiday.image is None:
                         await self._bot.send_message(
                             subscriber.tg_id,
-                            holiday.emoji_title,
+                            holiday.as_message(),
                             reply_markup=subscriber_markup,
                         )
                     else:
@@ -51,7 +52,7 @@ class Poster:
                             BufferedInputFile(
                                 holiday.image, filename=holiday.image_path
                             ),
-                            caption=holiday.emoji_title,
+                            caption=holiday.as_message(),
                             reply_markup=subscriber_markup,
                         )
 
@@ -61,7 +62,6 @@ class Poster:
 
     async def post(self):
         """Posts holidays taken from storage to subscribers"""
-
         if not STORAGE.is_today_file_exists():
             raise FileNotFoundError()
 

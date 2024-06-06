@@ -1,86 +1,69 @@
-import json
-import random
-import sys
 import requests
+import os
+from typing import Optional
+from bs4 import BeautifulSoup
+from date import DATE_TIME_INFO
+from time import sleep
+from datetime import datetime
+import sys
 
-query = "День пожилых людей! (Россия)"
-
-url = "https://api.fusionbrain.ai/web/api/v1/text2image/run?model_id=1"
-
-headers = {
-    # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-    "Host": "api.fusionbrain.ai",
-    "Origin": "https://editor.fusionbrain.ai",
+_headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
 }
 
-styles = [
-    "",
-    "ANIME",
-    "UHD",
-    "CYBERPUNK",
-    "KANDINSKY",
-    "AIVAZOVSKY",
-    # "MALEVICH",
-    # "PICASSO",
-    # "GONCHAROVA",
-    "CLASSICISM",
-    "RENAISSANCE",
-    "OILPAINTING",
-    # "PENCILDRAWING",
-    "DIGITALPAINTING",
-    "MEDIEVALPAINTING",
-    "SOVIETCARTOON",
-    "RENDER",
-    # "CARTOON",
-    "STUDIOPHOTO",
-    "PORTRAITPHOTO",
-    "KHOKHLOMA",
-    # "CRISTMAS",
-]
+# d = datetime.now()
+# print()
 
-dumped = json.dumps(
-    {
-        "type": "GENERATE",
-        "generateParams": {"query": "День пожилых людей"},
-        "width": 512,
-        "height": 512,
-        "style": "",
-    }
+# response = requests.get(
+#     f"https://nationaltoday.com/{d.strftime('%B').lower()}-{d.day}-holidays/",
+#     headers=_headers,
+#     timeout=2,
+# )
+# print(response.status_code)
+
+# soup = BeautifulSoup(response.content, "html.parser")
+# block_div = soup.find("div", {"class": "what-is-container"})
+# elements = list(
+#     block_div.findChildren("div", {"class": "title-box"}, recursive=True)  # type: ignore
+# )
+# for el in elements:
+#     print(el.findChild("h3", {"class": "holiday-title"}).text)
+#     desc = el.findChild("p", {"class": "excerpt"})
+#     print(desc.text if desc else "")
+#     print()
+# sys.exit()
+
+
+response = requests.get(
+    "https://www.holidaycalendar.io/day/june-5-holidays",
+    headers=_headers,
+    timeout=2,
 )
+print(response.status_code)
+
+soup = BeautifulSoup(response.content, "html.parser")
+# block_div = soup.find("div", {"class": "day-holidays"})
+# block_div = soup.find("div", {"class": "month-holidays"})
 
 
-files = {
-    "params": ("blob", dumped, "application/json"),
-}
+# elements = list(block_div.findChildren("div", {"class": "card"}, recursive=True))  # type: ignore
+# for el in elements:
+#     print(el.findChild("h3").text)
+#     desc = el.findChild("div", {"class": "day-text"})
+#     print(desc.text if desc else "")
+#     print()
 
 
-response = requests.post(url, files=files, headers=headers)
-
-# print(response.status_code, response.content)
-
-answer_uuid = response.json()["uuid"]
-
-status_url = f"https://api.fusionbrain.ai/web/api/v1/text2image/status/{answer_uuid}"
-
-import time
-
-answer_response = None
-
-while True:
-    answer_response = requests.get(status_url)
-    # print(status_response.status_code, status_response.content)
-    if answer_response.json()["status"] == "DONE":
-        break
-    time.sleep(5)
-
-if answer_response is None:
-    print(":((((((((((((((")
-    sys.exit()
-
-image_base64 = answer_response.json()["images"][0]
-
-import base64
+block_div = soup.find("div", {"class": "historical-events"})
+sp2 = BeautifulSoup(block_div.findChild("p", recursive=True).text, "html.parser")
 
 
-with open("./1.png", "wb") as image_file:
-    image_file.write(base64.b64decode(image_base64))
+elements = list(sp2.findChildren("div", {"class": "timeline-item"}, recursive=True))  # type: ignore
+print(elements)
+for el in elements:
+    print(el.findChild("div", {"class": "timeline-date-text"}).text)
+    title, desc = el.findChildren("div", {"class": "timeline-text"})
+    print(title.text if desc else "")
+    print(desc.text if desc else "")
+    print()
+sys.exit()

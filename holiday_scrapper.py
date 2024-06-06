@@ -1,4 +1,3 @@
-import grequests
 import os
 from typing import Optional
 from bs4 import BeautifulSoup
@@ -8,6 +7,12 @@ import requests
 from datetime import datetime
 
 
+from holiday_provider import (
+    HolidayCalendarProvider,
+    HolidayProvider,
+    NationalTodayProvider,
+    RussianProvider,
+)
 from logger import LOGGER
 
 # from datetime import datetime
@@ -17,6 +22,7 @@ class HolidayScrapper:
     """Holiday data scrapper implementation"""
 
     _sep = "~"
+    _inner_sep = ";"
     _headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
     }
@@ -40,7 +46,15 @@ class HolidayScrapper:
         self.path = os.path.join(".", self.folder)
         HolidayScrapper._soft_mkdir(self.path)
 
-    def _read_from_disk(self, date: Optional[datetime] = None) -> list[str]:
+        self.providers: list[HolidayProvider] = [
+            RussianProvider(
+                include_birthday=False, exclude=[self._sep, self._inner_sep]
+            ),
+            # NationalTodayProvider(exclude=[self._sep, self._inner_sep]),
+            HolidayCalendarProvider(exclude=[self._sep, self._inner_sep]),
+        ]
+
+    def _read_from_disk(self, date: Optional[datetime] = None) -> list[tuple[str, str]]:
         day = DATE_TIME_INFO.get_datetime_now().day - 1
         if date is not None:
             day = date.day - 1
@@ -49,7 +63,11 @@ class HolidayScrapper:
             with open(filename, "r", encoding="utf-8") as f:
                 lines = f.readlines()
                 if len(lines) > day:
-                    return lines[day].split(self._sep)
+                    results = []
+                    for holiday in lines[day].split(self._sep):
+                        title, desc = holiday.split(self._inner_sep)
+                        results.append((title, desc))
+                    return results
         except FileNotFoundError:
             LOGGER.log(f"File with holidays not found. Filename {filename}", "Error")
         return []
@@ -64,7 +82,7 @@ class HolidayScrapper:
 
     def get_holidays(
         self, force: bool = False, date: Optional[datetime] = None
-    ) -> list[str]:
+    ) -> list[tuple[str, str]]:
         filename = self._get_filename(date)
 
         if not force and os.path.exists(filename):
@@ -97,123 +115,15 @@ class HolidayScrapper:
             except ValueError:
                 break
 
-            month_holidays.append(
-                self._sep.join(self._scrap_holidays(date_time)) + "\n"
-            )
+            day_holidays = []
+            for provider in self.providers:
+                day_holidays += [
+                    self._inner_sep.join(hs)
+                    for hs in provider.scrap_holidays(date_time)
+                ]
+            month_holidays.append(self._sep.join(day_holidays) + "\n")
 
         return month_holidays
-
-    def _scrap_holidays(self, _date: Optional[datetime] = None) -> list[str]:
-        date = DATE_TIME_INFO.get_datetime_now()
-        if _date is not None:
-            date = _date
-        year = date.year
-        month = date.month
-        day = date.day
-
-        response = requests.get(
-            f"https://www.calend.ru/day/{year}-{month}-{day}/",
-            headers=self._headers,
-            timeout=2,
-        )
-
-        if not response.ok:
-            return []
-
-        LOGGER.log(f"Scrapping holiday titles {day}.{month:02}.{year}")
-
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        holiday_titles = []
-
-        for block in ["holidays", "thisDay", "knownDates"]:
-            block_div = soup.find("div", {"class": f"block {block}"})
-            if block_div is None:
-                continue
-            elements = list(
-                block_div.findChildren(  # type: ignore
-                    "span", {"class": "title"}, recursive=True
-                )
-            )
-
-            for element in LOGGER.get_tqdm(
-                elements,
-                total=len(elements),
-                desc=f"Scrapping [{block}] holiday titles {day}.{month:02}.{year}",
-                leave=False,
-            ):
-                try:
-                    holiday_titles.append(element.find("a").text)
-                except BaseException:  # pylint: disable=W0718
-                    pass
-
-        # Именины
-        block = "block nameDay"
-        block_div = soup.find("div", {"class": f"{block}"})
-        if block_div is not None:
-            elements = list(
-                block_div.findChildren(  # type: ignore
-                    "span", {"class": "caption"}, recursive=True
-                )
-            )
-            for element in LOGGER.get_tqdm(
-                elements,
-                total=len(elements),
-                desc=f"Scrapping [{block}] holiday titles {day}.{month:02}.{year}",
-                leave=False,
-            ):
-                try:
-                    name = element.find("a").text
-                    desc = element.find("p").text
-                    holiday_titles.append(f"Именины — {name} ({desc})")
-                except BaseException:  # pylint: disable=W0718
-                    pass
-
-        # Персоны
-        block = "persons"
-        block_div = soup.find("div", {"class": f"block {block}"})
-        if block_div is not None:
-            elements = list(
-                block_div.findChildren(  # type: ignore
-                    "div", {"class": "caption"}, recursive=True
-                )
-            )
-            for element in LOGGER.get_tqdm(
-                elements,
-                total=len(elements),
-                desc=f"Scrapping [{block}] holiday titles {day}.{month:02}.{year}",
-                leave=False,
-            ):
-                try:
-                    person_element = element.find("span", {"class": "title"})
-                    desc = person_element.find("span").text
-
-                    anchor = person_element.find("a")
-                    link = anchor["href"]
-                    name = anchor.text
-                    sleep(self._request_delay)
-
-                    person_response = requests.get(
-                        link,
-                        headers=self._headers,
-                        timeout=2,
-                    )
-                    person_soup = BeautifulSoup(person_response.content, "html.parser")
-
-                    dates = person_soup.find("ul", {"class": "personDates"}).findChildren(  # type: ignore
-                        "span", {"class": "personDate"}, recursive=True
-                    )
-                    birth = dates[0].text.strip()
-                    death = "настоящее время"
-                    if len(dates) > 1:
-                        death = dates[2].text.strip()
-
-                    holiday_titles.append(f"{name} ({birth} — {death}), {desc}")
-
-                except BaseException:  # pylint: disable=W0718
-                    pass
-
-        return holiday_titles
 
 
 HOLIDAY_SCRAPPER = HolidayScrapper()
