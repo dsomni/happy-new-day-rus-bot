@@ -150,6 +150,7 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         super().__init__()
 
         self.api_url = "https://api-inference.huggingface.co/models/"
+        self.api_hour_limit = 280
 
         self.basic_models = [
             "stabilityai/stable-diffusion-xl-base-1.0",
@@ -181,15 +182,13 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         self.attempt_rounds = 10
         self.model_attempts = 3
 
-        self.delay_s = 5
-
-        self._requests_size = 10
+        self._requests_size = 5
+        self.delay_s = 3600 / self.api_hour_limit * self._requests_size + 1
 
     def get_image_b64_hash(self, prompt):
         return self._api_wrapper(prompt)
 
     def get_image_b64_hashes(self, prompts: list[str]) -> list[bytes]:
-
         prompt_hash_dict: dict[str, bytes] = dict()
         for prompt in prompts:
             prompt_hash_dict[prompt] = bytes([])
@@ -197,7 +196,6 @@ class HuggingFaceImageGenerator(ModelBasedImageGeneratorInterface):
         remain_prompts = prompts.copy()
 
         for k in range(self.attempt_rounds):
-
             if len(remain_prompts) == 0:
                 break
 

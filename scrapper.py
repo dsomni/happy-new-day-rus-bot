@@ -16,7 +16,7 @@ class Scrapper:
         self.image_generator = HuggingFaceImageGenerator()
         self.holiday_scrapper = HolidayScrapper()
 
-    async def scrap(self, force: bool = False, limit: int = 0) -> list[Holiday]:
+    async def scrap(self, force: bool = False, limit: int = 10) -> list[Holiday]:
         """Scraps holiday titles and combines them with images
 
         Args:

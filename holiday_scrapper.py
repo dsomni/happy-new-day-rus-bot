@@ -41,7 +41,6 @@ class HolidayScrapper:
         return os.path.join(self.path, f"{today.month:02}_{today.year}.txt")
 
     def __init__(self, folder: str = "holiday_storage") -> None:
-
         self.folder = folder
         self.path = os.path.join(".", self.folder)
         HolidayScrapper._soft_mkdir(self.path)
@@ -115,15 +114,24 @@ class HolidayScrapper:
             except ValueError:
                 break
 
-            day_holidays = []
-            for provider in self.providers:
-                day_holidays += [
-                    self._inner_sep.join(hs)
-                    for hs in provider.scrap_holidays(date_time)
-                ]
+            day_holidays = self._scrap_day_holidays(date_time)
+
             month_holidays.append(self._sep.join(day_holidays) + "\n")
 
         return month_holidays
+
+    def _scrap_day_holidays(self, _date: Optional[datetime] = None) -> list[str]:
+        date = DATE_TIME_INFO.get_datetime_now()
+        if _date is not None:
+            date = _date
+
+        day_holidays = []
+        for provider in self.providers:
+            day_holidays += [
+                self._inner_sep.join(hs) for hs in provider.scrap_holidays(date)
+            ]
+
+        return day_holidays
 
 
 HOLIDAY_SCRAPPER = HolidayScrapper()
